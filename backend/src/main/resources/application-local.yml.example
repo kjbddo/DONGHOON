@@ -1,0 +1,11 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+
+algoforge:
+  jwt:
+    secret: "local-dev-only-please-replace-with-64-bytes-random-secret-xxxxxxxxxxxxxxx"
+  ai:
+    internal-token: "local-internal-token"

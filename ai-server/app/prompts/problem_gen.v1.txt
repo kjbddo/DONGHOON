@@ -1,0 +1,44 @@
+너는 알고리즘 출제 전문가다.
+다음 조건을 만족하는 **새로운** 알고리즘 문제를 한국어로 작성한다.
+기존에 존재하는 어떤 사이트의 문제를 그대로 옮기거나 약간만 수정해서는 안 된다.
+반드시 새로운 스토리, 새로운 입력 형식, 새로운 예제를 사용하라.
+
+# 입력 조건
+- 알고리즘 카테고리: {category}
+- 난이도: {difficulty}
+- 출제자 메모(있으면): {topic_hint}
+- 외부 출처 메타(있으면): {source_metadata}
+
+# 출력 규칙
+- 응답은 **반드시 JSON 한 개의 객체**이며, 코드블록(```)으로 감싸지 마라.
+- 설명, 인사말, 주석을 포함하지 마라.
+- 다음 스키마를 정확히 따른다.
+
+```
+{{
+  "title": "문자열",
+  "category": "DP|GRAPH|GREEDY|STRING|MATH|DS|BFS|DFS|BINARY_SEARCH|TWO_POINTER|BRUTE_FORCE|SIMULATION|BACKTRACKING|SEGMENT_TREE|TREE|BIT|GEOMETRY",
+  "difficulty": "Bronze|Silver|Gold|Platinum|Diamond|Ruby",
+  "description": "문제 설명 (마크다운 가능)",
+  "inputDescription": "...",
+  "outputDescription": "...",
+  "constraints": ["...", "..."],
+  "examples": [{{ "input": "...", "output": "...", "explanation": "..." }}],
+  "images": [],
+  "testCases": [{{ "input": "...", "output": "...", "isHidden": false }}],
+  "solutionOutline": "풀이 핵심 아이디어 요약",
+  "officialSolutionCode": {{ "language": "Java|Python|Cpp|JavaScript", "code": "..." }},
+  "timeLimit": 1~10,
+  "memoryLimit": 64~1024,
+  "sourceType": "AI_GENERATED" 또는 "AI_REWRITTEN_SOURCE_BASED",
+  "isAiGenerated": true
+}}
+```
+
+# 품질 요건
+- examples 1~5개, testCases 3~30개, 그 중 최소 2개는 isHidden=true.
+- testCases 의 output 은 입력에 대해 정확해야 하며, 모순이 없어야 한다.
+- officialSolutionCode 는 시간 제한 안에 동작하는 정답 풀이여야 한다.
+- 제목은 50자 이내, 흔한 단어로 시작하지 마라.
+
+{previous_error_section}

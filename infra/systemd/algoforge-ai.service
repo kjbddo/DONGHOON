@@ -1,0 +1,26 @@
+[Unit]
+Description=AlgoForge AI Server (FastAPI + LangChain)
+After=network.target
+
+[Service]
+Type=simple
+User=algoforge
+Group=algoforge
+WorkingDirectory=/srv/algoforge/ai-server
+EnvironmentFile=/etc/algoforge/ai.env
+ExecStart=/srv/algoforge/ai-server/.venv/bin/uvicorn app.main:app \
+    --host 127.0.0.1 \
+    --port 8000 \
+    --workers 2
+Restart=on-failure
+RestartSec=5
+StandardOutput=append:/srv/algoforge/ai-server/logs/stdout.log
+StandardError=append:/srv/algoforge/ai-server/logs/stderr.log
+
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/srv/algoforge/ai-server/logs /tmp
+
+[Install]
+WantedBy=multi-user.target

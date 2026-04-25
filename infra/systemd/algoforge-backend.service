@@ -1,0 +1,28 @@
+[Unit]
+Description=AlgoForge Backend (Spring Boot)
+After=network.target postgresql.service rabbitmq-server.service
+
+[Service]
+Type=simple
+User=algoforge
+Group=algoforge
+WorkingDirectory=/srv/algoforge/backend
+EnvironmentFile=/etc/algoforge/backend.env
+ExecStart=/usr/lib/jvm/jdk-23/bin/java \
+    -Xms512m -Xmx2g \
+    -Dfile.encoding=UTF-8 \
+    -jar /srv/algoforge/backend/app.jar
+SuccessExitStatus=143
+Restart=on-failure
+RestartSec=5
+StandardOutput=append:/srv/algoforge/backend/logs/stdout.log
+StandardError=append:/srv/algoforge/backend/logs/stderr.log
+
+# --- 보안 ---
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/srv/algoforge/backend/logs /tmp
+
+[Install]
+WantedBy=multi-user.target

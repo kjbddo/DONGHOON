@@ -1,0 +1,51 @@
+spring:
+  application:
+    name: algoforge-judge-worker
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/algoforge}
+    username: ${DB_USERNAME:algoforge}
+    password: ${DB_PASSWORD:algoforge}
+    driver-class-name: org.postgresql.Driver
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    listener:
+      simple:
+        acknowledge-mode: auto
+        prefetch: 1
+        retry:
+          enabled: true
+          max-attempts: 3
+          initial-interval: 2s
+          multiplier: 2
+
+server:
+  port: ${WORKER_PORT:8090}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics
+
+algoforge:
+  judge:
+    submission-queue: judge.submission
+    result-queue: judge.result
+    dlx-exchange: judge.dlx
+    workdir-base: ${JUDGE_WORKDIR:/tmp/algoforge/judge}
+    docker-binary: ${DOCKER_BIN:docker}
+    output-limit-bytes: 67108864      # 64MB
+    compile-timeout-ms: 30000
+    short-circuit: true               # 첫 실패 시 후속 케이스 스킵 (true면 병렬 비활성)
+    parallel-test-cases: ${JUDGE_PARALLEL:4}   # short-circuit=false 일 때만 적용
+    read-cgroup-memory: true        # Linux에서 memory.peak 시도; OOM(137)은 한도로 보정
+
+logging:
+  level:
+    root: INFO
+    com.algoforge.judge: DEBUG

@@ -1,0 +1,25 @@
+[Unit]
+Description=AlgoForge Judge Worker
+After=network.target rabbitmq-server.service docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User=algoforge
+Group=docker
+WorkingDirectory=/srv/algoforge/judge-worker
+EnvironmentFile=/etc/algoforge/judge.env
+ExecStart=/usr/lib/jvm/jdk-23/bin/java \
+    -Xms256m -Xmx1g \
+    -jar /srv/algoforge/judge-worker/worker.jar
+SuccessExitStatus=143
+Restart=on-failure
+RestartSec=5
+StandardOutput=append:/srv/algoforge/judge-worker/logs/stdout.log
+StandardError=append:/srv/algoforge/judge-worker/logs/stderr.log
+
+# Docker socket 접근 필요. 운영에서는 rootless docker 권장.
+ReadWritePaths=/srv/algoforge/judge-worker/logs /tmp /var/run/docker.sock
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,43 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: false
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+logging:
+  level:
+    root: WARN
+    com.algoforge: INFO
+    org.testcontainers: INFO
+    org.hibernate.SQL: WARN
+
+algoforge:
+  jwt:
+    # 테스트는 결정적으로 — 64+ bytes 임의 시크릿
+    secret: "test-secret-please-do-not-use-in-production-this-is-only-for-integration-tests"
+    access-token-validity-seconds: 600
+    refresh-token-validity-seconds: 3600
+  ai:
+    base-url: "http://localhost:1"
+    internal-token: "test-token"
+    timeout-seconds: 5
+    quota:
+      daily-per-user: 0   # 테스트에서는 quota 비활성
+      daily-global: 0
+  judge:
+    submission-queue: judge.submission
+    result-queue: judge.result
+    dlx-exchange: judge.dlx
+  cors:
+    allowed-origins:
+      - "http://localhost:5173"
+  seed:
+    admin:
+      enabled: false
