@@ -93,7 +93,7 @@ algoforge:
     refresh-token-validity-seconds: 1209600    # 14일
   ai:
     base-url: ${AI_SERVER_URL:http://localhost:8000}
-    internal-token: ${INTERNAL_AI_TOKEN:1q2w3e$R1q2w3e$R1q2w3e$R1q2w3e$R}
+    internal-token: ${INTERNAL_AI_TOKEN:LSvoQWaO7mw0IMZBQevQhRGebZPSNOmWXm5P7AIaBdJ}
     timeout-seconds: 60
     quota:
       daily-per-user: ${AI_QUOTA_DAILY_PER_USER:30}   # 사용자 1인 일일 한도 (0 이하 = 비활성)

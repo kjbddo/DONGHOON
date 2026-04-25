@@ -166,15 +166,36 @@ cd /srv/algoforge/app/judge-worker
 # build/libs/...-SNAPSHOT.jar
 ```
 
+**`Permission denied` / 빌드 디렉터리에 쓸 수 없음**  
+`/srv/algoforge/app` 이 `algoforge` 소유인데 **다른 계정(예: `ubuntu`, root로만 클론한 경우)**으로 `./gradlew`를 실행하면, `build/` 생성·`gradlew` 실행이 막힐 수 있습니다.
+
+- **권장:** 앱 전체 소유권을 서비스 유저에 맞춘 뒤, 그 유저로 빌드합니다.
+
+```bash
+sudo chown -R algoforge:algoforge /srv/algoforge
+sudo -u algoforge -H bash
+cd /srv/algoforge/app/backend
+chmod +x gradlew   # 한 번만 (클론 직후 실행 비트가 없을 때)
+./gradlew clean bootJar
+exit   # algoforge 셸 종료
+```
+
+- **임시로 한 번만** 본인 계정이 빌드해야 하면(비권장, 산출물 권한 다시 맞출 것): `sudo -u algoforge` 셸에서 실행하는 것이 `build/` 소유권·경로를 헷갈리지 않습니다.
+
 ### 10.2 프론트 (Vite `dist`)
+
+저장소에 `frontend/package-lock.json`이 있으면 재현 가능한 설치를 위해 **`npm ci`**를 쓰면 됩니다. lock 파일이 없는 브랜치/복사본이면 한 번 **`npm install`**로 의존성을 설치한 뒤 빌드하세요(이후 lock이 생기면 `npm ci` 가능).
 
 ```bash
 cd /srv/algoforge/app/frontend
 npm ci
+# 또는 lock이 없을 때: npm install
 # 프로덕션 API가 같은 도메인 /api 를 쓰는지: vite env 확인 (보통 baseURL /api)
 npm run build
 # 산출물: dist/
 ```
+
+`npm run build`에서 `tsc: not found`가 나오면 **의존성이 아직 설치되지 않은 것**입니다(`node_modules/.bin`에 `tsc`가 옵니다). 위 `npm ci`/`npm install`을 먼저 실행하세요.
 
 ### 10.3 AI 서버 (가상환경 + 의존성)
 
