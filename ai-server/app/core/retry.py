@@ -1,5 +1,5 @@
 import logging
-from typing import Awaitable, Callable, Type, TypeVar
+from typing import Any, Awaitable, Callable, Type, TypeVar
 
 from pydantic import BaseModel, ValidationError
 
@@ -10,6 +10,16 @@ T = TypeVar("T", bound=BaseModel)
 
 class AIGenerationFailed(Exception):
     pass
+
+
+def _normalize_keys(obj: Any) -> Any:
+    """LLM이 키 앞뒤에 공백/제어문자를 붙여 보내는 경우(GPT-5 nano 관찰)에 대비.
+    dict 키만 재귀적으로 trim 한다. 값은 건드리지 않는다."""
+    if isinstance(obj, dict):
+        return {(k.strip() if isinstance(k, str) else k): _normalize_keys(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_normalize_keys(v) for v in obj]
+    return obj
 
 
 async def generate_with_validation(
@@ -23,9 +33,9 @@ async def generate_with_validation(
         try:
             raw = await invoke(last_error)
             if isinstance(raw, str):
-                # JsonOutputParser 미사용 시
                 import json
                 raw = json.loads(raw)
+            raw = _normalize_keys(raw)
             return schema_cls.model_validate(raw)
         except (ValidationError, ValueError) as e:
             last_error = str(e)

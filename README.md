@@ -2,6 +2,19 @@
 
 백준과 유사한 알고리즘 문제 풀이 플랫폼 + AI 기반 문제 생성 / 단계별 힌트 / 반례 생성을 결합한 학습 서비스의 모노레포입니다.
 
+> 최근 변경 요약 (2026-04 기준)
+>
+> - **공개 문제 목록(`GET /api/problems`)에 카테고리 필터(`category=...`)** 추가, 응답에 로그인 사용자별
+>   `userStatus`(`SOLVED` / `WRONG` / `null`) 필드 포함. 프론트 목록에 카테고리 select 와 해결/틀림 배지 노출.
+> - **AI 문제 생성 카테고리 직접 입력**(자유 문자열) 지원. 표준 enum 외에도 관리자가 직접 적은 한국어
+>   카테고리 그대로 통과/저장.
+> - 문제 본문(`description` / `inputDescription` / `outputDescription` / `constraints` /
+>   `examples[*].explanation`) 에 **마크다운 + KaTeX 수식 + 외부 이미지 URL** 렌더링 (`ProblemMarkdown`
+>   컴포넌트 + `react-markdown` + `remark-gfm` / `remark-breaks` / `remark-math` / `rehype-katex`).
+> - **AI 응답 텍스트 정규화**: Gemini 응답이 한 단계만 풀려 `\n`/`\t` 가 두 글자 literal 로 들어오는 케이스를
+>   ai-server·backend 양쪽에서 정규화. KaTeX `$...$` 영역은 보존.
+> - 자세한 변경 흐름: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), API 스펙: [docs/API.md](docs/API.md).
+
 ## 모노레포 구조
 
 ```

@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { generateAiProblem } from '@/api/admin';
+import ProblemMarkdown from '@/components/markdown/ProblemMarkdown';
 import type { AdminProblemDetail } from '@/types/admin';
 
 const AI_CATEGORIES = [
@@ -15,27 +16,47 @@ const AI_CATEGORIES = [
   'BFS',
   'DFS',
   'BINARY_SEARCH',
+  'TWO_POINTER',
+  'BRUTE_FORCE',
+  'SIMULATION',
+  'BACKTRACKING',
+  'SEGMENT_TREE',
+  'TREE',
+  'BIT',
+  'GEOMETRY',
 ];
+
+const CUSTOM_CATEGORY_VALUE = '__custom__';
 
 const AI_DIFFICULTIES = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Ruby'];
 
 export default function AdminAiProblemGeneratePage() {
   const [category, setCategory] = useState<string>('');
+  const [customCategory, setCustomCategory] = useState<string>('');
   const [difficulty, setDifficulty] = useState<string>('');
   const [topicHint, setTopicHint] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [generated, setGenerated] = useState<AdminProblemDetail | null>(null);
+  const qc = useQueryClient();
+
+  const isCustom = category === CUSTOM_CATEGORY_VALUE;
+  const resolvedCategory = isCustom ? customCategory.trim() : category;
 
   const mutation = useMutation({
     mutationFn: () =>
       generateAiProblem({
-        category: category || undefined,
+        category: resolvedCategory || undefined,
         difficulty: difficulty || undefined,
         topicHint: topicHint.trim() || undefined,
       }),
     onSuccess: (res) => {
       setGenerated(res);
       setErrorMsg(null);
+      // 새 문제가 만들어졌으니 admin 리스트 / 사용자 리스트 / 단일문제 캐시 무효화.
+      // (사용자가 다른 탭/페이지로 이동하자마자 자동으로 최신 목록을 받도록.)
+      void qc.invalidateQueries({ queryKey: ['admin', 'problems'] });
+      void qc.invalidateQueries({ queryKey: ['problems'] });
+      void qc.invalidateQueries({ queryKey: ['admin', 'problem', res.id] });
     },
     onError: (err: unknown) => {
       const message = (err as { response?: { data?: { error?: { message?: string } } } })
@@ -76,7 +97,17 @@ export default function AdminAiProblemGeneratePage() {
                   {c}
                 </option>
               ))}
+              <option value={CUSTOM_CATEGORY_VALUE}>직접 입력…</option>
             </select>
+            {isCustom && (
+              <input
+                value={customCategory}
+                onChange={(e) => setCustomCategory(e.target.value)}
+                placeholder="예: NETWORK_FLOW, KMP, 게임이론"
+                className="mt-2 w-full border rounded px-3 py-2 text-sm"
+                maxLength={64}
+              />
+            )}
           </label>
           <label className="block">
             <span className="block text-xs text-gray-500 mb-1">난이도</span>
@@ -145,21 +176,49 @@ export default function AdminAiProblemGeneratePage() {
 
           <Divider />
           <Subsection title="문제 설명">
-            <pre className="whitespace-pre-wrap text-sm text-gray-800">{generated.description}</pre>
+            <ProblemMarkdown>{generated.description}</ProblemMarkdown>
           </Subsection>
           <Subsection title="입력 형식">
-            <pre className="whitespace-pre-wrap text-sm text-gray-800">{generated.inputDescription}</pre>
+            <ProblemMarkdown>{generated.inputDescription}</ProblemMarkdown>
           </Subsection>
           <Subsection title="출력 형식">
-            <pre className="whitespace-pre-wrap text-sm text-gray-800">{generated.outputDescription}</pre>
+            <ProblemMarkdown>{generated.outputDescription}</ProblemMarkdown>
           </Subsection>
           {generated.constraints.length > 0 && (
             <Subsection title="제약 조건">
               <ul className="list-disc ml-5 text-sm text-gray-800">
                 {generated.constraints.map((c, i) => (
-                  <li key={i}>{c}</li>
+                  <li key={i}>
+                    <ProblemMarkdown inline>{c}</ProblemMarkdown>
+                  </li>
                 ))}
               </ul>
+            </Subsection>
+          )}
+          {generated.examples.length > 0 && (
+            <Subsection title={`예제 (${generated.examples.length}개)`}>
+              <div className="space-y-3">
+                {generated.examples.map((ex, i) => (
+                  <div key={i} className="border rounded p-2 text-xs">
+                    <div className="grid grid-cols-2 gap-2 font-mono">
+                      <div>
+                        <div className="text-gray-500 mb-1">입력 #{i + 1}</div>
+                        <pre className="whitespace-pre-wrap">{ex.input}</pre>
+                      </div>
+                      <div>
+                        <div className="text-gray-500 mb-1">출력 #{i + 1}</div>
+                        <pre className="whitespace-pre-wrap">{ex.output}</pre>
+                      </div>
+                    </div>
+                    {ex.explanation && (
+                      <div className="mt-2 text-gray-700">
+                        <div className="text-gray-500 mb-1">설명</div>
+                        <ProblemMarkdown>{ex.explanation}</ProblemMarkdown>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </Subsection>
           )}
           <Subsection title={`테스트 케이스 (${generated.testCases.length}개)`}>

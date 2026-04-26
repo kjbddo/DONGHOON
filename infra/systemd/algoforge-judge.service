@@ -9,7 +9,7 @@ User=algoforge
 Group=docker
 WorkingDirectory=/srv/algoforge/judge-worker
 EnvironmentFile=/etc/algoforge/judge.env
-ExecStart=/usr/lib/jvm/jdk-23/bin/java \
+ExecStart=/usr/lib/jvm/jdk-23.0.2-oracle-x64/bin/java \
     -Xms256m -Xmx1g \
     -jar /srv/algoforge/judge-worker/worker.jar
 SuccessExitStatus=143

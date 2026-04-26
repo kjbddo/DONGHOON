@@ -40,6 +40,8 @@ export default function AdminProblemManagePage() {
   const query = useQuery({
     queryKey: ['admin', 'problems', filters],
     queryFn: () => fetchAdminProblems(filters),
+    refetchOnMount: 'always',
+    staleTime: 0,
   });
 
   const statusMutation = useMutation({

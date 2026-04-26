@@ -5,20 +5,53 @@ import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { fetchProblems } from '@/api/problem';
 import AiBadge from '@/components/problem/AiBadge';
 import DifficultyBadge from '@/components/problem/DifficultyBadge';
+import ProblemUserStatusBadge from '@/components/problem/ProblemUserStatusBadge';
+import { useAuthStore } from '@/stores/authStore';
 import type { Difficulty } from '@/types/problem';
 
 const DIFFICULTIES: Difficulty[] = ['BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'DIAMOND'];
+
+const CATEGORY_PRESETS = [
+  'DP',
+  'GRAPH',
+  'GREEDY',
+  'STRING',
+  'MATH',
+  'DS',
+  'BFS',
+  'DFS',
+  'BINARY_SEARCH',
+  'TWO_POINTER',
+  'BRUTE_FORCE',
+  'SIMULATION',
+  'BACKTRACKING',
+  'SEGMENT_TREE',
+  'TREE',
+  'BIT',
+  'GEOMETRY',
+];
 
 export default function ProblemListPage() {
   const [page, setPage] = useState(0);
   const [keyword, setKeyword] = useState('');
   const [keywordInput, setKeywordInput] = useState('');
   const [difficulty, setDifficulty] = useState<string>('');
+  const [category, setCategory] = useState<string>('');
+  const { user } = useAuthStore();
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['problems', { page, keyword, difficulty }],
-    queryFn: () => fetchProblems({ page, size: 20, keyword: keyword || undefined, difficulty: difficulty || undefined }),
+    queryKey: ['problems', { page, keyword, difficulty, category, userId: user?.userId ?? null }],
+    queryFn: () =>
+      fetchProblems({
+        page,
+        size: 20,
+        keyword: keyword || undefined,
+        difficulty: difficulty || undefined,
+        category: category || undefined,
+      }),
     placeholderData: keepPreviousData,
+    refetchOnMount: 'always',
+    staleTime: 0,
   });
 
   return (
@@ -52,6 +85,21 @@ export default function ProblemListPage() {
           {DIFFICULTIES.map((d) => (
             <option key={d} value={d}>
               {d}
+            </option>
+          ))}
+        </select>
+        <select
+          value={category}
+          onChange={(e) => {
+            setPage(0);
+            setCategory(e.target.value);
+          }}
+          className="border rounded-md px-2 py-1.5 text-sm"
+        >
+          <option value="">카테고리 전체</option>
+          {CATEGORY_PRESETS.map((c) => (
+            <option key={c} value={c}>
+              {c}
             </option>
           ))}
         </select>
@@ -89,14 +137,13 @@ export default function ProblemListPage() {
               <tr key={p.id} className="border-t hover:bg-gray-50">
                 <td className="px-3 py-2 text-gray-500">{p.id}</td>
                 <td className="px-3 py-2">
-                  <Link to={`/problems/${p.id}`} className="text-blue-700 hover:underline font-medium">
-                    {p.title}
-                  </Link>
-                  {p.aiGenerated && (
-                    <span className="ml-2 align-middle">
-                      <AiBadge />
-                    </span>
-                  )}
+                  <span className="inline-flex items-center gap-2 align-middle">
+                    {user && <ProblemUserStatusBadge status={p.userStatus} />}
+                    <Link to={`/problems/${p.id}`} className="text-blue-700 hover:underline font-medium">
+                      {p.title}
+                    </Link>
+                    {p.aiGenerated && <AiBadge />}
+                  </span>
                 </td>
                 <td className="px-3 py-2">
                   <DifficultyBadge difficulty={p.difficulty} />

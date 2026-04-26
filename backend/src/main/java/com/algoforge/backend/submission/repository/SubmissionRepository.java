@@ -30,6 +30,16 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
     @Query("SELECT COUNT(DISTINCT s.problemId) FROM Submission s WHERE s.userId = :userId")
     long countDistinctProblemsByUser(@Param("userId") Long userId);
 
+    /** 입력된 problemId 집합 중 사용자가 한 번이라도 제출한 problemId만 반환 */
+    @Query("""
+            SELECT DISTINCT s.problemId
+              FROM Submission s
+             WHERE s.userId = :userId
+               AND s.problemId IN :problemIds
+            """)
+    List<Long> findAttemptedProblemIds(@Param("userId") Long userId,
+                                       @Param("problemIds") List<Long> problemIds);
+
     /** 사용자의 언어별 제출 수 — Object[] {languageId, count} */
     @Query("""
             SELECT s.languageId AS languageId, COUNT(s) AS cnt

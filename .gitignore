@@ -75,3 +75,10 @@ infra/volumes/
 # ===== Misc =====
 tmp/
 *.bak
+*.bak.*
+
+# ===== Build artefacts =====
+*.tsbuildinfo
+# 루트와 backend 에는 npm 프로젝트가 없으므로 의도치 않은 lock 파일은 무시한다.
+/package-lock.json
+backend/package-lock.json

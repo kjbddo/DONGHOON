@@ -13,9 +13,14 @@ public record ProblemSummaryResponse(
         String difficulty,
         boolean aiGenerated,
         List<String> categories,
-        List<String> tags
+        List<String> tags,
+        ProblemUserStatus userStatus
 ) {
     public static ProblemSummaryResponse from(Problem p) {
+        return from(p, null);
+    }
+
+    public static ProblemSummaryResponse from(Problem p, ProblemUserStatus userStatus) {
         return new ProblemSummaryResponse(
                 p.getId(),
                 p.getSlug(),
@@ -23,7 +28,8 @@ public record ProblemSummaryResponse(
                 p.getDifficulty().name(),
                 p.isAiGenerated(),
                 p.getCategories().stream().map(ProblemCategory::getName).toList(),
-                p.getTags().stream().map(ProblemTag::getName).toList()
+                p.getTags().stream().map(ProblemTag::getName).toList(),
+                userStatus
         );
     }
 }

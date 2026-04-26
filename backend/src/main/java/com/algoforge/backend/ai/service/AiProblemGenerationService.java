@@ -4,8 +4,10 @@ import com.algoforge.backend.ai.client.AiClient;
 import com.algoforge.backend.ai.domain.AiCallPurpose;
 import com.algoforge.backend.ai.dto.GenerateProblemAiRequest;
 import com.algoforge.backend.ai.dto.GeneratedProblemAiResponse;
+import com.algoforge.backend.ai.util.AiTextNormalizer;
 import com.algoforge.backend.common.exception.BusinessException;
 import com.algoforge.backend.common.exception.ErrorCode;
+import com.algoforge.backend.config.AiServerProperties;
 import com.algoforge.backend.problem.domain.Difficulty;
 import com.algoforge.backend.problem.domain.Example;
 import com.algoforge.backend.problem.domain.ProblemSourceType;
@@ -33,13 +35,18 @@ import java.util.concurrent.ExecutionException;
 @RequiredArgsConstructor
 public class AiProblemGenerationService {
 
-    private static final String DEFAULT_MODEL = "gemini";
     private static final String DEFAULT_PROMPT_VERSION = "v1";
 
     private final AiClient aiClient;
     private final AdminProblemService adminProblemService;
     private final AiQuotaService quotaService;
     private final AiCallLogger callLogger;
+    private final AiServerProperties aiProps;
+
+    private String modelName() {
+        String m = aiProps.model();
+        return (m == null || m.isBlank()) ? "unknown" : m;
+    }
 
     public AdminProblemDetailResponse generate(GenerateProblemAiRequest req, Long requesterUserId) {
         // 관리자 호출이라도 비용 보호 차원에서 일일 quota 적용
@@ -56,12 +63,12 @@ public class AiProblemGenerationService {
         try {
             GeneratedProblemAiResponse res = await(aiClient.generateProblem(req));
             callLogger.logSuccess(AiCallPurpose.PROBLEM_GEN, userId,
-                    DEFAULT_MODEL, DEFAULT_PROMPT_VERSION,
+                    modelName(), DEFAULT_PROMPT_VERSION,
                     req, res, elapsedMs(startedAt));
             return res;
         } catch (RuntimeException ex) {
             callLogger.logFailure(AiCallPurpose.PROBLEM_GEN, userId,
-                    DEFAULT_MODEL, DEFAULT_PROMPT_VERSION,
+                    modelName(), DEFAULT_PROMPT_VERSION,
                     req, elapsedMs(startedAt), ex);
             throw ex;
         }
@@ -78,15 +85,18 @@ public class AiProblemGenerationService {
 
         List<Example> examples = ai.examples() == null ? List.of()
                 : ai.examples().stream()
-                .map(e -> new Example(e.input(), e.output(), e.explanation()))
+                .map(e -> new Example(
+                        AiTextNormalizer.normalize(e.input()),
+                        AiTextNormalizer.normalize(e.output()),
+                        AiTextNormalizer.normalize(e.explanation())))
                 .toList();
 
         List<TestCaseDto> testCases = ai.testCases() == null ? List.of()
                 : ai.testCases().stream()
                 .map(t -> new TestCaseDto(
                         null,
-                        Objects.requireNonNullElse(t.input(), ""),
-                        Objects.requireNonNullElse(t.output(), ""),
+                        AiTextNormalizer.normalize(Objects.requireNonNullElse(t.input(), "")),
+                        AiTextNormalizer.normalize(Objects.requireNonNullElse(t.output(), "")),
                         Boolean.TRUE.equals(t.isHidden())))
                 .toList();
 
@@ -97,13 +107,16 @@ public class AiProblemGenerationService {
         int timeLimitMs = ai.timeLimit() == null ? 2000 : ai.timeLimit() * 1000;
         int memoryLimitMb = ai.memoryLimit() == null ? 256 : ai.memoryLimit();
 
+        List<String> constraints = ai.constraints() == null ? List.of()
+                : ai.constraints().stream().map(AiTextNormalizer::normalize).toList();
+
         return new AiProblemCreateCommand(
                 ai.title(),
                 null, // slug 자동 생성
-                ai.description(),
-                ai.inputDescription(),
-                ai.outputDescription(),
-                ai.constraints(),
+                AiTextNormalizer.normalize(ai.description()),
+                AiTextNormalizer.normalize(ai.inputDescription()),
+                AiTextNormalizer.normalize(ai.outputDescription()),
+                constraints,
                 examples,
                 timeLimitMs,
                 memoryLimitMb,
@@ -112,7 +125,7 @@ public class AiProblemGenerationService {
                 ai.category() == null ? List.of() : List.of(ai.category()),
                 List.of(),       // tags는 프롬프트 변경 시 채워질 수 있음
                 testCases,
-                DEFAULT_MODEL,
+                modelName(),
                 DEFAULT_PROMPT_VERSION,
                 userId
         );

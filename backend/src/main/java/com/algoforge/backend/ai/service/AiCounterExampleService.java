@@ -10,6 +10,7 @@ import com.algoforge.backend.ai.repository.CounterExampleRepository;
 import com.algoforge.backend.ai.service.SubmissionAiContextLoader.Context;
 import com.algoforge.backend.common.exception.BusinessException;
 import com.algoforge.backend.common.exception.ErrorCode;
+import com.algoforge.backend.config.AiServerProperties;
 import com.algoforge.backend.problem.domain.Problem;
 import com.algoforge.backend.submission.domain.Submission;
 import com.algoforge.backend.submission.domain.SubmissionStatus;
@@ -35,7 +36,6 @@ import java.util.concurrent.ExecutionException;
 @RequiredArgsConstructor
 public class AiCounterExampleService {
 
-    private static final String DEFAULT_MODEL = "gemini";
     private static final String DEFAULT_PROMPT_VERSION = "v1";
 
     private final AiClient aiClient;
@@ -43,6 +43,12 @@ public class AiCounterExampleService {
     private final SubmissionAiContextLoader contextLoader;
     private final AiQuotaService quotaService;
     private final AiCallLogger callLogger;
+    private final AiServerProperties aiProps;
+
+    private String modelName() {
+        String m = aiProps.model();
+        return (m == null || m.isBlank()) ? "unknown" : m;
+    }
 
     public CounterExampleResponse getOrCreate(Long submissionId, Long requesterUserId) {
         if (repository.countBySubmissionId(submissionId) > 0) {
@@ -99,12 +105,12 @@ public class AiCounterExampleService {
         try {
             CounterExampleAiResponse res = await(aiClient.generateCounterExamples(req));
             callLogger.logSuccess(AiCallPurpose.COUNTER_EXAMPLE, userId,
-                    DEFAULT_MODEL, DEFAULT_PROMPT_VERSION,
+                    modelName(), DEFAULT_PROMPT_VERSION,
                     req, res, elapsedMs(startedAt));
             return res;
         } catch (RuntimeException ex) {
             callLogger.logFailure(AiCallPurpose.COUNTER_EXAMPLE, userId,
-                    DEFAULT_MODEL, DEFAULT_PROMPT_VERSION,
+                    modelName(), DEFAULT_PROMPT_VERSION,
                     req, elapsedMs(startedAt), ex);
             throw ex;
         }

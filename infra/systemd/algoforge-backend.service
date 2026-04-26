@@ -8,7 +8,7 @@ User=algoforge
 Group=algoforge
 WorkingDirectory=/srv/algoforge/backend
 EnvironmentFile=/etc/algoforge/backend.env
-ExecStart=/usr/lib/jvm/jdk-23/bin/java \
+ExecStart=/usr/lib/jvm/jdk-23.0.2-oracle-x64/bin/java \
     -Xms512m -Xmx2g \
     -Dfile.encoding=UTF-8 \
     -jar /srv/algoforge/backend/app.jar

@@ -95,6 +95,8 @@ algoforge:
     base-url: ${AI_SERVER_URL:http://localhost:8000}
     internal-token: ${INTERNAL_AI_TOKEN:LSvoQWaO7mw0IMZBQevQhRGebZPSNOmWXm5P7AIaBdJ}
     timeout-seconds: 60
+    # AI 서버에 실제로 떠 있는 LLM 모델명. ai_call_logs.model_name 등에 그대로 기록된다.
+    model: ${ALGOFORGE_AI_MODEL:${OPENAI_MODEL:unknown}}
     quota:
       daily-per-user: ${AI_QUOTA_DAILY_PER_USER:30}   # 사용자 1인 일일 한도 (0 이하 = 비활성)
       daily-global: ${AI_QUOTA_DAILY_GLOBAL:1000}     # 전체 일일 한도 (비용 보호)

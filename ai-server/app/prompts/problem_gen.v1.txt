@@ -9,6 +9,14 @@
 - 출제자 메모(있으면): {topic_hint}
 - 외부 출처 메타(있으면): {source_metadata}
 
+# 카테고리 처리 규칙
+- "알고리즘 카테고리"가 "자유"가 아니면, 출력 JSON 의 "category" 필드는 입력값을 **그대로** 사용한다.
+  관리자가 표준 enum 외의 직접 입력 카테고리를 사용했을 수 있으므로, 임의로 바꾸지 마라.
+- "자유"일 때만 다음 권장 카테고리 중 적합한 하나를 선택한다:
+  DP / GRAPH / GREEDY / STRING / MATH / DS / BFS / DFS / BINARY_SEARCH /
+  TWO_POINTER / BRUTE_FORCE / SIMULATION / BACKTRACKING / SEGMENT_TREE /
+  TREE / BIT / GEOMETRY.
+
 # 출력 규칙
 - 응답은 **반드시 JSON 한 개의 객체**이며, 코드블록(```)으로 감싸지 마라.
 - 설명, 인사말, 주석을 포함하지 마라.
@@ -17,9 +25,9 @@
 ```
 {{
   "title": "문자열",
-  "category": "DP|GRAPH|GREEDY|STRING|MATH|DS|BFS|DFS|BINARY_SEARCH|TWO_POINTER|BRUTE_FORCE|SIMULATION|BACKTRACKING|SEGMENT_TREE|TREE|BIT|GEOMETRY",
+  "category": "위 규칙에 따른 카테고리 문자열",
   "difficulty": "Bronze|Silver|Gold|Platinum|Diamond|Ruby",
-  "description": "문제 설명 (마크다운 가능)",
+  "description": "문제 설명 (마크다운 가능; 수식이 필요하면 KaTeX 문법 $...$ 또는 $$...$$ 을 사용)",
   "inputDescription": "...",
   "outputDescription": "...",
   "constraints": ["...", "..."],
@@ -35,10 +43,28 @@
 }}
 ```
 
+# 이미지 사용 규칙
+- 그림이 반드시 필요한 문제(예: 격자/도형 시각화)에서만 description 본문 안에 마크다운 이미지 문법
+  `![alt 설명](https://...)` 으로 삽입한다. URL 은 공개적으로 접근 가능한 안정적인 위치여야 한다.
+- 확실한 URL 이 없으면 이미지를 만들지 말고 텍스트 묘사로 대체한다.
+- 별도의 "images" 배열은 빈 배열로 둔다 (현재 저장소는 본문 마크다운 이미지를 사용한다).
+
 # 품질 요건
 - examples 1~5개, testCases 3~30개, 그 중 최소 2개는 isHidden=true.
 - testCases 의 output 은 입력에 대해 정확해야 하며, 모순이 없어야 한다.
 - officialSolutionCode 는 시간 제한 안에 동작하는 정답 풀이여야 한다.
 - 제목은 50자 이내, 흔한 단어로 시작하지 마라.
+
+# 수식 표기 규칙 (매우 중요)
+- description / inputDescription / outputDescription / constraints / **examples[*].explanation**
+  안의 **모든** 수학 표기는 반드시 KaTeX 문법으로 둘러싼다. 인라인은 `$ ... $`, 블록은 `$$ ... $$`.
+- 예제 explanation 도 마크다운/KaTeX 로 렌더되므로 본문과 동일한 규칙을 따른다.
+- 변수 하나(`$N$`, `$x$`), 지수(`$10^9$`), 부등식(`$1 \le N \le 10^5$`), 합(`$$\sum_{{i=1}}^{{n}} a_i$$`)
+  등 짧은 표기도 예외 없이 `$...$` 로 감싸라.
+- 같은 식을 한 번은 raw 텍스트로(`S_i = max(A_i, F_{{i-1}})`), 다시 KaTeX 로
+  중복해서 적지 마라. **항상 KaTeX 한 가지 형식만** 사용한다.
+- KaTeX 안에서는 `\le`, `\ge`, `\max`, `\min`, `\cdot`, `\frac`, `\leq`, `\geq` 등 표준 명령을 사용한다.
+  `<=`, `>=`, `*` 같은 기호는 코드/입출력 예시가 아닌 한 KaTeX 안에서 사용하지 마라.
+- `_`, `^` 가 들어가는 식은 반드시 KaTeX 로 감싸야 한다 (마크다운 italic 으로 잘못 해석되는 것을 방지).
 
 {previous_error_section}

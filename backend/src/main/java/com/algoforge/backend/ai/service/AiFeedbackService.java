@@ -10,6 +10,7 @@ import com.algoforge.backend.ai.repository.AiFeedbackRepository;
 import com.algoforge.backend.ai.service.SubmissionAiContextLoader.Context;
 import com.algoforge.backend.common.exception.BusinessException;
 import com.algoforge.backend.common.exception.ErrorCode;
+import com.algoforge.backend.config.AiServerProperties;
 import com.algoforge.backend.problem.domain.Problem;
 import com.algoforge.backend.submission.domain.Submission;
 import com.algoforge.backend.submission.domain.SubmissionStatus;
@@ -30,7 +31,6 @@ import java.util.concurrent.ExecutionException;
 @RequiredArgsConstructor
 public class AiFeedbackService {
 
-    private static final String DEFAULT_MODEL = "gemini";
     private static final String DEFAULT_PROMPT_VERSION = "v1";
 
     private final AiClient aiClient;
@@ -38,6 +38,12 @@ public class AiFeedbackService {
     private final SubmissionAiContextLoader contextLoader;
     private final AiQuotaService quotaService;
     private final AiCallLogger callLogger;
+    private final AiServerProperties aiProps;
+
+    private String modelName() {
+        String m = aiProps.model();
+        return (m == null || m.isBlank()) ? "unknown" : m;
+    }
 
     public AiFeedbackResponse getOrCreate(Long submissionId, Long requesterUserId, int feedbackLevel) {
         if (feedbackLevel < 1 || feedbackLevel > 4) {
@@ -92,12 +98,12 @@ public class AiFeedbackService {
         try {
             FeedbackAiResponse res = await(aiClient.generateFeedback(req));
             callLogger.logSuccess(AiCallPurpose.FEEDBACK, userId,
-                    DEFAULT_MODEL, DEFAULT_PROMPT_VERSION,
+                    modelName(), DEFAULT_PROMPT_VERSION,
                     req, res, elapsedMs(startedAt));
             return res;
         } catch (RuntimeException ex) {
             callLogger.logFailure(AiCallPurpose.FEEDBACK, userId,
-                    DEFAULT_MODEL, DEFAULT_PROMPT_VERSION,
+                    modelName(), DEFAULT_PROMPT_VERSION,
                     req, elapsedMs(startedAt), ex);
             throw ex;
         }
@@ -138,7 +144,7 @@ public class AiFeedbackService {
                 .complexityHint(ai.complexityHint())
                 .runtimeErrorHint(ai.runtimeErrorHint())
                 .compileErrorHint(ai.compileErrorHint())
-                .modelName(DEFAULT_MODEL)
+                .modelName(modelName())
                 .promptVersion(DEFAULT_PROMPT_VERSION)
                 .build();
     }

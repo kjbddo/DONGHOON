@@ -115,3 +115,21 @@ API 문서(개발/스테이징): `https://<host>/swagger-ui.html` (Bearer 토큰
 - API: [API.md](./API.md)
 - 보안: [SECURITY.md](./SECURITY.md)
 - DB 스키마: `backend/src/main/resources/db/migration/V*.sql` (ERD는 마이그레이션/엔티티를 기준으로 유지)
+
+## 12. 문제 본문/예제의 escape 깨짐 보정
+
+AI 응답 누락된 escape 단계 때문에 `description` / `examples` 등에 두 글자 `\n`, `\t` 가
+literal 로 저장되는 케이스가 발견될 수 있습니다. 신규 입력은 `AiTextNormalizer` (backend) 와
+ai-server `chains/problem_gen_chain.py` 의 `_normalize_payload` 가 막지만, 과거 데이터는 1회성
+스크립트로 보정합니다.
+
+```bash
+# 호스트에서 실행 (PostgreSQL 컨테이너 사용)
+sudo python3 /srv/algoforge/infra/scripts/normalize_problem_text.py
+# 또는 ad-hoc 스크립트 (수식 영역 $...$ 는 보존하고 그 외 영역의 \n/\r/\t 만 제어문자로)
+```
+
+- 대상 컬럼: `problems.description / input_description / output_description / constraints / examples`,
+  `test_cases.input / expected_output`
+- idempotent 하므로 여러 번 실행해도 안전. 잔존 `\` 매치 가운데 KaTeX 명령(`\le`, `\frac` 등)은
+  의도적으로 보존되어야 하므로 변경되지 않습니다.

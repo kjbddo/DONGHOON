@@ -6,9 +6,10 @@ After=network.target
 Type=simple
 User=algoforge
 Group=algoforge
-WorkingDirectory=/srv/algoforge/ai-server
+# /srv/algoforge/ai-server 는 logs+중첩 링크만 있어 .venv가 없음 → 실제 코드 루트 사용
+WorkingDirectory=/srv/algoforge/app/ai-server
 EnvironmentFile=/etc/algoforge/ai.env
-ExecStart=/srv/algoforge/ai-server/.venv/bin/uvicorn app.main:app \
+ExecStart=/srv/algoforge/app/ai-server/.venv/bin/python3 -m uvicorn app.main:app \
     --host 127.0.0.1 \
     --port 8000 \
     --workers 2
@@ -20,7 +21,8 @@ StandardError=append:/srv/algoforge/ai-server/logs/stderr.log
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/srv/algoforge/ai-server/logs /tmp
+# LangChain/임베딩 캐시 등이 ~/.cache 등에 쓰일 수 있음
+ReadWritePaths=/srv/algoforge/app/ai-server /srv/algoforge/ai-server/logs /tmp /home/algoforge
 
 [Install]
 WantedBy=multi-user.target

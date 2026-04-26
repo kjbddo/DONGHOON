@@ -25,7 +25,8 @@ class SolutionCodeSchema(BaseModel):
     code: str
 
 
-CategoryLiteral = Literal[
+# 권장 enum 카테고리. 관리자가 직접 입력하면 자유 문자열로 받아 그대로 통과시킨다.
+SUGGESTED_CATEGORIES: List[str] = [
     "DP",
     "GRAPH",
     "GREEDY",
@@ -50,7 +51,8 @@ DifficultyLiteral = Literal["Bronze", "Silver", "Gold", "Platinum", "Diamond", "
 
 class GeneratedProblemSchema(BaseModel):
     title: str = Field(min_length=1, max_length=200)
-    category: CategoryLiteral
+    # 관리자 직접 입력 카테고리 지원을 위해 자유 문자열로 둔다 (백엔드에서 find-or-create).
+    category: str = Field(min_length=1, max_length=64)
     difficulty: DifficultyLiteral
     description: str = Field(min_length=20)
     inputDescription: str
@@ -68,7 +70,8 @@ class GeneratedProblemSchema(BaseModel):
 
 
 class GenerateProblemRequest(BaseModel):
-    category: Optional[CategoryLiteral] = None
+    # 관리자 직접 입력 카테고리 지원: 자유 문자열 허용. 비어있으면 LLM이 적절히 선택한다.
+    category: Optional[str] = Field(default=None, max_length=64)
     difficulty: Optional[DifficultyLiteral] = None
     topic_hint: Optional[str] = Field(default=None, alias="topicHint")
     source_metadata: Optional[dict] = Field(default=None, alias="sourceMetadata")

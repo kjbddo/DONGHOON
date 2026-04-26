@@ -6,5 +6,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record AiServerProperties(
         String baseUrl,
         String internalToken,
-        int timeoutSeconds
+        int timeoutSeconds,
+        String model
 ) {}

@@ -1,9 +1,9 @@
 import { Link, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import ReactMarkdown from 'react-markdown';
 
 import { addBookmark, isBookmarked, removeBookmark } from '@/api/bookmark';
 import { fetchProblem } from '@/api/problem';
+import ProblemMarkdown from '@/components/markdown/ProblemMarkdown';
 import AiBadge from '@/components/problem/AiBadge';
 import DifficultyBadge from '@/components/problem/DifficultyBadge';
 import { useAuthStore } from '@/stores/authStore';
@@ -96,22 +96,24 @@ export default function ProblemDetailPage() {
       </header>
 
       <Section title="문제 설명">
-        <Markdown>{data.description}</Markdown>
+        <ProblemMarkdown>{data.description}</ProblemMarkdown>
       </Section>
 
       <Section title="입력">
-        <Markdown>{data.inputDescription}</Markdown>
+        <ProblemMarkdown>{data.inputDescription}</ProblemMarkdown>
       </Section>
 
       <Section title="출력">
-        <Markdown>{data.outputDescription}</Markdown>
+        <ProblemMarkdown>{data.outputDescription}</ProblemMarkdown>
       </Section>
 
       {data.constraints.length > 0 && (
         <Section title="제약 사항">
           <ul className="list-disc pl-5 space-y-1 text-sm">
             {data.constraints.map((c, i) => (
-              <li key={i}>{c}</li>
+              <li key={i}>
+                <ProblemMarkdown inline>{c}</ProblemMarkdown>
+              </li>
             ))}
           </ul>
         </Section>
@@ -125,7 +127,9 @@ export default function ProblemDetailPage() {
                 <Code label={`예제 입력 ${i + 1}`} value={ex.input} />
                 <Code label={`예제 출력 ${i + 1}`} value={ex.output} />
                 {ex.explanation && (
-                  <div className="md:col-span-2 text-sm text-gray-600">{ex.explanation}</div>
+                  <div className="md:col-span-2 text-sm text-gray-600">
+                    <ProblemMarkdown>{ex.explanation}</ProblemMarkdown>
+                  </div>
                 )}
               </div>
             ))}
@@ -155,14 +159,6 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <h2 className="text-lg font-semibold mb-3">{title}</h2>
       {children}
     </section>
-  );
-}
-
-function Markdown({ children }: { children: string }) {
-  return (
-    <div className="prose prose-sm max-w-none whitespace-pre-wrap">
-      <ReactMarkdown>{children}</ReactMarkdown>
-    </div>
   );
 }
 

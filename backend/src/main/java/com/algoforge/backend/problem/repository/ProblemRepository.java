@@ -24,16 +24,19 @@ public interface ProblemRepository extends JpaRepository<Problem, Long> {
      * - difficulty/aiGenerated/keyword는 null 허용 (필터 미적용)
      */
     @Query("""
-            SELECT p FROM Problem p
+            SELECT DISTINCT p FROM Problem p
+            LEFT JOIN p.categories c
             WHERE p.status = :status
               AND (:difficulty IS NULL OR p.difficulty = :difficulty)
               AND (:aiOnly IS NULL OR p.aiGenerated = :aiOnly)
-              AND (:keyword IS NULL OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')))
+              AND (:category IS NULL OR LOWER(c.name) = LOWER(CAST(:category AS string)))
+              AND (:keyword IS NULL OR LOWER(p.title) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')))
             """)
     Page<Problem> searchPublic(
             @Param("status") ProblemStatus status,
             @Param("difficulty") Difficulty difficulty,
             @Param("aiOnly") Boolean aiOnly,
+            @Param("category") String category,
             @Param("keyword") String keyword,
             Pageable pageable
     );
@@ -47,7 +50,7 @@ public interface ProblemRepository extends JpaRepository<Problem, Long> {
               AND (:difficulty IS NULL OR p.difficulty = :difficulty)
               AND (:aiOnly IS NULL OR p.aiGenerated = :aiOnly)
               AND (:includeDeleted = TRUE OR p.status <> com.algoforge.backend.problem.domain.ProblemStatus.DELETED)
-              AND (:keyword IS NULL OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')))
+              AND (:keyword IS NULL OR LOWER(p.title) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')))
             """)
     Page<Problem> searchAdmin(
             @Param("status") ProblemStatus status,

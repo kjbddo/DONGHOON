@@ -21,6 +21,9 @@ export interface PublicTestCase {
   expectedOutput: string;
 }
 
+/** 로그인한 사용자 시점에서 본 문제 풀이 상태. */
+export type ProblemUserStatus = 'SOLVED' | 'WRONG';
+
 /** GET /api/problems 응답 요소 */
 export interface ProblemSummary {
   id: number;
@@ -30,6 +33,8 @@ export interface ProblemSummary {
   aiGenerated: boolean;
   categories: string[];
   tags: string[];
+  /** 비로그인이거나 시도 이력이 없으면 null. */
+  userStatus?: ProblemUserStatus | null;
 }
 
 /** GET /api/problems/{id} 응답 */

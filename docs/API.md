@@ -10,9 +10,23 @@
 
 ## Problem (사용자)
 - GET /api/problems
+  - Query: `difficulty`, `ai`(=aiOnly, boolean), `category`, `keyword`, `page`, `size`, `sort`
+  - `category` 는 `problem_categories.name` 과 대소문자 무시 일치(LOWER)로 비교.
+  - 응답 요소(`ProblemSummaryResponse`) 에 `userStatus` 추가:
+    - 비로그인 또는 시도 이력 없음 → `null`
+    - `user_solved_problems` 에 존재 → `SOLVED`
+    - `submissions` 에 시도 이력은 있지만 ACCEPTED 가 없음 → `WRONG`
 - GET /api/problems/{id}
 - POST /api/problems/{id}/bookmark (Auth)
 - POST /api/problems/{id}/report (Auth)
+
+### 문제 본문 렌더링 규약
+- `description` / `inputDescription` / `outputDescription` / `constraints[*]` /
+  `examples[*].explanation` 은 마크다운(GFM) + KaTeX 수식이 적용된 형태로 렌더링됩니다.
+  - 인라인 수식: `$x \\le 10^9$`, 블록 수식: `$$\\sum_{i=1}^{n} a_i$$`
+  - 외부 이미지: `![alt](https://...)` (https/http/`/` 절대경로만 허용, 그 외는 안전장치로 대체 텍스트 출력)
+- 백엔드는 AI 가 생성한 텍스트의 literal `\\n` / `\\r` / `\\t` 를 실제 제어문자로 정규화한 뒤 저장합니다
+  (`com.algoforge.backend.ai.util.AiTextNormalizer`). 수식 영역(`$...$`, `$$...$$`)은 보존.
 
 ## Submission
 - POST /api/submissions (Auth)

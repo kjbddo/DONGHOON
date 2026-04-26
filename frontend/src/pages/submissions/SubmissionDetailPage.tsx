@@ -1,11 +1,31 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 
 import { fetchSubmission, subscribeSubmissionStream } from '@/api/submission';
 import AiFeedbackPanel from '@/components/ai/AiFeedbackPanel';
 import CounterExamplePanel from '@/components/ai/CounterExamplePanel';
 import { STATUS_COLOR, STATUS_LABEL, type SubmissionDetail, type SubmissionStatus } from '@/types/submission';
+
+const FINAL_STATES: SubmissionStatus[] = [
+  'ACCEPTED',
+  'WRONG_ANSWER',
+  'COMPILE_ERROR',
+  'RUNTIME_ERROR',
+  'TIME_LIMIT_EXCEEDED',
+  'MEMORY_LIMIT_EXCEEDED',
+  'SYSTEM_ERROR',
+];
+
+function judgedToast(status: SubmissionStatus) {
+  const label = STATUS_LABEL[status];
+  if (status === 'ACCEPTED') {
+    toast.success(`채점 완료: ${label}`, { icon: '🎉' });
+  } else {
+    toast.error(`채점 완료: ${label}`);
+  }
+}
 
 export default function SubmissionDetailPage() {
   const { id } = useParams();
@@ -19,27 +39,32 @@ export default function SubmissionDetailPage() {
     enabled: !!submissionId,
   });
 
-  // 채점 진행 중이면 SSE로 갱신
+  // 한 제출에 대해 토스트는 한 번만 띄운다 (페이지 재방문/포커스 변경 시 중복 방지)
+  const toastedRef = useRef<number | null>(null);
+
+  // 처음 화면을 열었을 때 이미 final 이면(=새로고침/재진입) 토스트는 생략하고 캐시만 표시
+  useEffect(() => {
+    if (data && FINAL_STATES.includes(data.status)) {
+      toastedRef.current = submissionId;
+    }
+  }, [data, submissionId]);
+
+  // 채점 진행 중이면 SSE(+폴링 fallback)로 갱신, final 진입 시 토스트
   useEffect(() => {
     if (!data) return;
-    const finalStates: SubmissionStatus[] = [
-      'ACCEPTED',
-      'WRONG_ANSWER',
-      'COMPILE_ERROR',
-      'RUNTIME_ERROR',
-      'TIME_LIMIT_EXCEEDED',
-      'MEMORY_LIMIT_EXCEEDED',
-      'SYSTEM_ERROR',
-    ];
-    if (finalStates.includes(data.status)) return;
+    if (FINAL_STATES.includes(data.status)) return;
 
     const cleanup = subscribeSubmissionStream(submissionId, (payload) => {
       const obj = payload as { status?: SubmissionStatus };
-      if (obj?.status) {
-        qc.setQueryData<SubmissionDetail>(queryKey, (old) => (old ? { ...old, status: obj.status! } : old));
-        if (finalStates.includes(obj.status)) {
-          // 최종 상태 진입 시 결과 다시 가져오기
-          qc.invalidateQueries({ queryKey });
+      if (!obj?.status) return;
+
+      qc.setQueryData<SubmissionDetail>(queryKey, (old) => (old ? { ...old, status: obj.status! } : old));
+
+      if (FINAL_STATES.includes(obj.status)) {
+        qc.invalidateQueries({ queryKey });
+        if (toastedRef.current !== submissionId) {
+          toastedRef.current = submissionId;
+          judgedToast(obj.status);
         }
       }
     });

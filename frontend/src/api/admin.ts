@@ -61,9 +61,11 @@ export async function deleteAdminProblem(id: number): Promise<void> {
 }
 
 export async function generateAiProblem(payload: AiGenerateRequest = {}): Promise<AdminProblemDetail> {
+  // LLM 호출 + 검증 재시도로 최대 ~3분. 기본 15s 로는 항상 axios 가 먼저 끊긴다.
   const { data } = await apiClient.post<ApiResponse<AdminProblemDetail>>(
     '/admin/problems/ai/generate',
-    payload
+    payload,
+    { timeout: 180_000 }
   );
   return data.data;
 }

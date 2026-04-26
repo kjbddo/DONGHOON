@@ -2,16 +2,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
+import toast from 'react-hot-toast';
 
 import { fetchProblem } from '@/api/problem';
-import { submitCode, subscribeSubmissionStream } from '@/api/submission';
+import { submitCode } from '@/api/submission';
 import CodeEditor from '@/components/editor/CodeEditor';
+import ProblemMarkdown from '@/components/markdown/ProblemMarkdown';
 import DifficultyBadge from '@/components/problem/DifficultyBadge';
-import {
-  STATUS_COLOR,
-  STATUS_LABEL,
-  type SubmissionStatus,
-} from '@/types/submission';
 
 const LANGUAGES = [
   { value: 'JAVA', label: 'Java' },
@@ -54,9 +51,6 @@ export default function ProblemSolvePage() {
     return () => clearTimeout(t);
   }, [code, storageKey]);
 
-  // 제출 + SSE 상태
-  const [submissionId, setSubmissionId] = useState<number | null>(null);
-  const [status, setStatus] = useState<SubmissionStatus | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -68,35 +62,21 @@ export default function ProblemSolvePage() {
     }
     setError(null);
     setSubmitting(true);
-    setStatus('PENDING');
     try {
       const res = await submitCode({ problemId: problem.id, language, code });
-      setSubmissionId(res.id);
-      setStatus(res.status);
+      toast.success(`제출 #${res.id} 등록됨 · 채점 진행 중…`);
+      // 제출되면 곧바로 디테일 페이지로 이동.
+      // 거기서 SSE/폴링으로 채점 상태가 자동 갱신되고, 완료 시 토스트가 뜬다.
+      navigate(`/submissions/${res.id}`);
     } catch (e) {
       const ax = e as AxiosError<{ error?: { message?: string } }>;
-      setError(ax.response?.data?.error?.message ?? '제출에 실패했습니다.');
-      setStatus(null);
+      const msg = ax.response?.data?.error?.message ?? '제출에 실패했습니다.';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setSubmitting(false);
     }
   };
-
-  // SSE 구독
-  useEffect(() => {
-    if (!submissionId) return;
-    const cleanup = subscribeSubmissionStream(
-      submissionId,
-      (payload) => {
-        const obj = payload as { status?: SubmissionStatus };
-        if (obj?.status) setStatus(obj.status);
-      },
-      () => {
-        // 연결 끊김 시에도 detail 페이지에서 다시 조회 가능
-      }
-    );
-    return cleanup;
-  }, [submissionId]);
 
   if (!problem) return <div className="text-gray-400 py-10 text-center">불러오는 중…</div>;
 
@@ -113,35 +93,48 @@ export default function ProblemSolvePage() {
         <h1 className="text-xl font-bold mb-3">
           #{problem.id} {problem.title}
         </h1>
-        <article className="prose prose-sm max-w-none whitespace-pre-wrap">
-          <h3>문제</h3>
-          <p>{problem.description}</p>
-          <h3>입력</h3>
-          <p>{problem.inputDescription}</p>
-          <h3>출력</h3>
-          <p>{problem.outputDescription}</p>
+        <article className="space-y-4">
+          <section>
+            <h3 className="text-base font-semibold mb-1">문제</h3>
+            <ProblemMarkdown>{problem.description}</ProblemMarkdown>
+          </section>
+          <section>
+            <h3 className="text-base font-semibold mb-1">입력</h3>
+            <ProblemMarkdown>{problem.inputDescription}</ProblemMarkdown>
+          </section>
+          <section>
+            <h3 className="text-base font-semibold mb-1">출력</h3>
+            <ProblemMarkdown>{problem.outputDescription}</ProblemMarkdown>
+          </section>
           {problem.constraints.length > 0 && (
-            <>
-              <h3>제약</h3>
-              <ul>
+            <section>
+              <h3 className="text-base font-semibold mb-1">제약</h3>
+              <ul className="list-disc pl-5 space-y-1 text-sm">
                 {problem.constraints.map((c, i) => (
-                  <li key={i}>{c}</li>
+                  <li key={i}>
+                    <ProblemMarkdown inline>{c}</ProblemMarkdown>
+                  </li>
                 ))}
               </ul>
-            </>
+            </section>
           )}
           {problem.examples.length > 0 && (
-            <>
-              <h3>예제</h3>
+            <section>
+              <h3 className="text-base font-semibold mb-1">예제</h3>
               {problem.examples.map((ex, i) => (
                 <div key={i} className="mb-3">
                   <div className="text-xs text-gray-500">예제 입력 {i + 1}</div>
-                  <pre className="bg-gray-900 text-gray-100 rounded p-2 text-xs">{ex.input}</pre>
+                  <pre className="bg-gray-900 text-gray-100 rounded p-2 text-xs whitespace-pre-wrap">{ex.input}</pre>
                   <div className="text-xs text-gray-500 mt-1">예제 출력 {i + 1}</div>
-                  <pre className="bg-gray-900 text-gray-100 rounded p-2 text-xs">{ex.output}</pre>
+                  <pre className="bg-gray-900 text-gray-100 rounded p-2 text-xs whitespace-pre-wrap">{ex.output}</pre>
+                  {ex.explanation && (
+                    <div className="mt-1 text-xs text-gray-700">
+                      <ProblemMarkdown>{ex.explanation}</ProblemMarkdown>
+                    </div>
+                  )}
                 </div>
               ))}
-            </>
+            </section>
           )}
         </article>
       </div>
@@ -161,11 +154,6 @@ export default function ProblemSolvePage() {
             ))}
           </select>
           <div className="flex gap-2 items-center">
-            {status && (
-              <span className={`px-2 py-0.5 rounded text-xs font-medium ${STATUS_COLOR[status]}`}>
-                {STATUS_LABEL[status]}
-              </span>
-            )}
             <button
               onClick={onSubmit}
               disabled={submitting}
@@ -173,14 +161,6 @@ export default function ProblemSolvePage() {
             >
               {submitting ? '제출 중…' : '제출'}
             </button>
-            {submissionId && status && (status === 'ACCEPTED' || status === 'WRONG_ANSWER' || (status as string).endsWith('ERROR') || (status as string).endsWith('EXCEEDED')) && (
-              <button
-                onClick={() => navigate(`/submissions/${submissionId}`)}
-                className="px-3 py-1.5 rounded-md border text-sm hover:bg-gray-50"
-              >
-                결과 상세
-              </button>
-            )}
           </div>
         </div>
         <div className="flex-1">
